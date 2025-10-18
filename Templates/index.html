@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Nossa Seleção de Cafés{% endblock %}
+
+{% block content %}
+<div class="row gx-5">
+    <aside class="col-md-3">
+        <h4 class="mb-3 text-brown">Categorias</h4> {# Adicionando uma classe para cor marrom #}
+        <div class="list-group list-group-flush border rounded overflow-hidden shadow-sm"> {# Adiciona borda e sombra para os filtros #}
+            <a href="{{ url_for('index') }}" 
+               class="list-group-item list-group-item-action py-3 {% if not selected_category_id %}active fw-bold{% endif %}">
+                <i class="bi bi-star me-2"></i> Mostrar Todos
+            </a>
+            {% for category in categories %}
+            <a href="{{ url_for('index', category_id=category.id) }}" 
+               class="list-group-item list-group-item-action py-3 {% if selected_category_id == category.id %}active fw-bold{% endif %}">
+                <i class="bi bi-tag me-2"></i> {{ category.name }}
+            </a>
+            {% endfor %}
+        </div>
+    </aside>
+
+    <main class="col-md-9">
+        <h2 class="pb-2 mb-4 border-bottom text-brown">Descubra Nossos Sabores</h2> {# Título mais convidativo #}
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4">
+            {% for product in products %}
+            <div class="col">
+                <div class="card h-100 border-0 shadow-lg hover-scale-effect" style="border-radius: 15px;"> {# Borda arredondada e sombra para os cards #}
+                    <a href="{{ url_for('product', product_id=product.id) }}" class="text-decoration-none">
+                        <img src="{{ product.image_url if product.image_url else 'https://placehold.co/600x600/a35f37/FFFFFF?text=Café+Alegre' }}" 
+                             class="card-img-top p-3" 
+                             alt="{{ product.name }}"
+                             style="object-fit: cover; height: 280px; border-radius: 15px 15px 0 0;"> {# Imagem arredondada no topo #}
+                    </a>
+                    
+                    <div class="card-body d-flex flex-column pt-2 pb-4 text-center"> {# Ajusta padding do corpo #}
+                        <h5 class="card-title fw-bolder text-dark mb-1">{{ product.name }}</h5> {# Título mais ousado #}
+                        <p class="card-text small text-muted flex-grow-1 mb-3">{{ product.description[:80] }}...</p> {# Descrição mais espaçada #}
+                        
+                        <div class="mt-auto">
+                            <p class="fs-4 fw-bold text-brown mb-3">R$ {{ "%.2f"|format(product.price|float) }}</p> {# Preço em destaque e cor marrom #}
+                            <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="post" class="d-grid px-3"> {# Botão com padding lateral #}
+                                <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow">Comprar Agora</button> {# Botão mais alegre e arredondado #}
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12">
+                <div class="alert alert-warning text-center rounded-pill py-3"> {# Alerta mais suave e arredondado #}
+                    <i class="bi bi-cup-hot me-2"></i> Ops! Não encontramos cafés nesta categoria. Tente outra!
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+</div>
+
+{# Bloco para adicionar estilos personalizados que vão tornar o design mais alegre #}
+<style>
+    body {
+        background-color: #f8f0e5; /* Um fundo mais suave, cor de creme/baunilha */
+        font-family: 'Open Sans', sans-serif; /* Fonte mais amigável, você pode importar do Google Fonts */
+    }
+    .text-brown {
+        color: #6f4e37; /* Um marrom café vibrante */
+    }
+    .btn-primary {
+        background-color: #a35f37; /* Cor de botão principal, um marrom alaranjado */
+        border-color: #a35f37;
+        transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+    .btn-primary:hover {
+        background-color: #c07a48; /* Um tom mais claro no hover */
+        border-color: #c07a48;
+        transform: translateY(-2px); /* Efeito de "lift" */
+    }
+    .list-group-item.active {
+        background-color: #e6ccb2; /* Cor ativa para filtros, um bege quente */
+        border-color: #e6ccb2;
+        color: #6f4e37; /* Texto em marrom */
+    }
+    .list-group-item {
+        color: #6f4e37; /* Texto dos filtros em marrom */
+        background-color: #fff; /* Fundo branco para os itens de filtro */
+    }
+    .card {
+        transition: transform 0.2s ease-in-out; /* Transição para o efeito de hover */
+    }
+    .hover-scale-effect:hover {
+        transform: scale(1.03); /* Efeito de zoom no hover */
+    }
+    /* Estilos para o ícone no filtro */
+    .list-group-item i {
+        color: #a35f37; /* Cor do ícone */
+    }
+    .list-group-item.active i {
+        color: #6f4e37; /* Cor do ícone quando ativo */
+    }
+</style>
+{% endblock %}

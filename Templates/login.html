@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card p-4">
+            <div class="card-body text-center">
+                <h2 class="mb-4">Acessar minha conta</h2>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <form action="{{ url_for('login') }}" method="post">
+                    <div class="form-floating mb-3">
+                        <input type="email" class="form-control" id="email" name="email" placeholder="nome@exemplo.com" required>
+                        <label for="email">Seu e-mail</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Senha" required>
+                        <label for="password">Sua senha</label>
+                    </div>
+                    <div class="text-end mb-4">
+                        <a href="{{ url_for('request_reset_token') }}" class="text-muted small">Esqueceu sua senha?</a>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">Entrar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="text-center mt-3">
+            <p>Não tem uma conta? <a href="{{ url_for('register') }}" class="text-dark">Cadastre-se</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

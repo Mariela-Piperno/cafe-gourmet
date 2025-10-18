@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Gerenciar Assinaturas{% endblock %}
+
+{% block content %}
+<h2 class="pb-2 border-bottom">Painel do Administrador - Gerenciar Assinaturas</h2>
+<p>Visualize todos os clientes que fazem parte do clube de assinatura.</p>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>ID da Assinatura</th>
+                <th>Cliente</th>
+                <th>Plano</th>
+                <th>Status</th>
+                <th>Data da Inscrição</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sub in subscriptions %}
+            <tr>
+                <td>{{ sub.id }}</td>
+                <td>{{ sub.customer_name }}</td>
+                <td>{{ sub.plan_name }}</td>
+                <td>
+                    <span class="badge {% if sub.status == 'ativa' %}bg-success{% else %}bg-danger{% endif %}">
+                        {{ sub.status|capitalize }}
+                    </span>
+                </td>
+                <td>{{ sub.created_at.strftime('%d/%m/%Y') }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="text-center">Nenhum assinante encontrado.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

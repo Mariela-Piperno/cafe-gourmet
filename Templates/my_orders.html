@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Meus Pedidos{% endblock %}
+
+{% block content %}
+<h2 class="pb-2 border-bottom">Meus Pedidos</h2>
+<p>Aqui você pode acompanhar o status de todas as suas compras.</p>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+{% if orders %}
+    <div class="accordion" id="ordersAccordion">
+        {% for order_id, order_details in orders.items() %}
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="heading{{ order_id }}">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ order_id }}">
+                    <div class="d-flex w-100 justify-content-between">
+                        <strong>Pedido #{{ order_id }}</strong>
+                        <span class="badge 
+                            {% if order_details.status|lower == 'entregue' %} bg-success
+                            {% elif order_details.status|lower == 'em_rota' %} bg-info
+                            {% elif order_details.status|lower == 'em_preparacao' %} bg-warning
+                            {% elif order_details.status|lower == 'aguardando_pagamento' %} bg-secondary
+                            {% else %} bg-dark {% endif %} me-2">
+                            {{ order_details.status.replace('_', ' ')|capitalize }}
+                        </span>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapse{{ order_id }}" class="accordion-collapse collapse" data-bs-parent="#ordersAccordion">
+                <div class="accordion-body">
+                    <p><strong>Data do Pedido:</strong> {{ order_details.created_at.strftime('%d/%m/%Y') }}</p>
+                    <p><strong>Valor Total:</strong> R$ {{ "%.2f"|format(order_details.total_amount) }}</p>
+                    
+                    <h5>Itens do Pedido:</h5>
+                    <ul class="list-group">
+                        {% for item in order_details['items'] %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                {{ item.product_name }} ({{ item.quantity }}x)
+                            </div>
+                            <div>
+                                <span class="me-3">R$ {{ "%.2f"|format(item.unit_price * item.quantity) }}</span>
+                                {% if order_details.status|lower == 'entregue' %}
+                                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#reviewModal-{{ order_id }}-{{ item.product_id }}">
+                                        Avaliar Produto
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="alert alert-info mt-4">
+        Você ainda não fez nenhum pedido. <a href="{{ url_for('index') }}" class="alert-link">Comece a comprar</a>!
+    </div>
+{% endif %}
+
+{% if orders %}
+    {% for order_id, order_details in orders.items() %}
+        {% if order_details.status|lower == 'entregue' %}
+            {% for item in order_details['items'] %}
+            <div class="modal fade" id="reviewModal-{{ order_id }}-{{ item.product_id }}" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <form action="{{ url_for('submit_review') }}" method="post">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Avaliar: {{ item.product_name }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <input type="hidden" name="product_id" value="{{ item.product_id }}">
+                                <input type="hidden" name="order_id" value="{{ order_id }}">
+
+                                <div class="mb-3">
+                                    <label for="rating" class="form-label">Sua nota (de 1 a 5):</label>
+                                    <select class="form-select" name="rating" id="rating" required>
+                                        <option value="5">5 - Excelente</option>
+                                        <option value="4">4 - Muito Bom</option>
+                                        <option value="3">3 - Bom</option>
+                                        <option value="2">2 - Razoável</option>
+                                        <option value="1">1 - Ruim</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="comment" class="form-label">Seu comentário:</label>
+                                    <textarea class="form-control" name="comment" id="comment" rows="4" placeholder="O que você achou deste café?"></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Enviar Avaliação</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+    {% endfor %}
+{% endif %}
+{% endblock %}

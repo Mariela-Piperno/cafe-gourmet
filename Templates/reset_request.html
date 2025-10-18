@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Redefinir Senha{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card p-4">
+            <div class="card-body text-center">
+                <h2 class="mb-3">Redefinir Senha</h2>
+                <p class="text-muted mb-4">Digite o e-mail associado à sua conta e enviaremos um link para você criar uma nova senha.</p>
+                
+                <form method="POST" action="">
+                    <div class="form-floating mb-4">
+                        <input type="email" class="form-control" id="email" name="email" placeholder="nome@exemplo.com" required>
+                        <label for="email">Seu e-mail</label>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">Enviar Link de Redefinição</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

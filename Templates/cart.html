@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Seu Carrinho de Compras{% endblock %}
+
+{% block content %}
+<h2 class="pb-2 border-bottom">Seu Carrinho</h2>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+
+{% if cart_items %}
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Produto</th>
+                <th class="text-center">Quantidade</th>
+                <th class="text-end">Preço Unitário</th>
+                <th class="text-end">Subtotal</th>
+                <th class="text-center">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product_id, item in cart_items.items() %}
+            <tr>
+                <td>{{ item.name }}</td>
+                <td class="text-center">{{ item.quantity }}</td>
+                <td class="text-end">R$ {{ "%.2f"|format(item.price) }}</td>
+                <td class="text-end">R$ {{ "%.2f"|format(item.price * item.quantity) }}</td>
+                <td class="text-center">
+                    <a href="{{ url_for('remove_from_cart', product_id=product_id) }}" class="btn btn-outline-danger btn-sm">Remover</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="table-light">
+                <td colspan="4" class="text-end fs-4"><strong>Total</strong></td>
+                <td class="text-end fs-4"><strong>R$ {{ "%.2f"|format(total_price) }}</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="row mt-4 justify-content-end">
+        
+        {% set has_subscription = cart_items.values()|selectattr('is_subscription')|list|length > 0 %}
+        {% if not has_subscription %}
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Calcular Frete</h5>
+                    <div class="input-group">
+                        <input type="text" id="cep-input" class="form-control" placeholder="Digite seu CEP (só números)" maxlength="8">
+                        <button class="btn btn-outline-primary" type="button" onclick="simularFrete()">Calcular</button>
+                    </div>
+                    <div id="resultado-frete" class="mt-2"></div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="col-12 d-flex justify-content-end mt-4">
+            <a href="{{ url_for('checkout') }}" class="btn btn-primary btn-lg">Finalizar Compra</a>
+        </div>
+    </div>
+
+    <script>
+    function simularFrete() {
+        var cepInput = document.getElementById('cep-input');
+        var cep = cepInput.value.replace(/\D/g, '');
+        var resultadoDiv = document.getElementById('resultado-frete');
+
+        if (cep.length === 8) {
+            resultadoDiv.innerHTML = `
+                <ul class="list-group mt-3">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Entrega Padrão (5 dias úteis)</span>
+                        <strong>R$ 15,00</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Entrega Expressa (2 dias úteis)</span>
+                        <strong>R$ 25,00</strong>
+                    </li>
+                </ul>
+            `;
+        } else {
+            resultadoDiv.innerHTML = '<div class="alert alert-danger mt-3">Por favor, digite um CEP válido com 8 números.</div>';
+        }
+    }
+    </script>
+
+{% else %}
+    <div class="alert alert-info mt-4">
+        Seu carrinho está vazio. <a href="{{ url_for('index') }}" class="alert-link">Continue comprando</a>!
+    </div>
+{% endif %}
+{% endblock %}

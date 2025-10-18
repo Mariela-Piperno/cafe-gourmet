@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Endereço{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h2 class="pb-2 border-bottom">Editar Endereço</h2>
+
+        <div class="card mt-4">
+            <div class="card-body">
+                <form action="{{ url_for('edit_address', address_id=address.id) }}" method="post">
+                    <div class="mb-3">
+                        <label for="street" class="form-label">Rua / Avenida</label>
+                        <input type="text" class="form-control" name="street" value="{{ address.street }}" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="number" class="form-label">Número</label>
+                            <input type="text" class="form-control" name="number" value="{{ address.number }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="complement" class="form-label">Complemento</label>
+                            <input type="text" class="form-control" name="complement" value="{{ address.complement or '' }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="neighborhood" class="form-label">Bairro</label>
+                        <input type="text" class="form-control" name="neighborhood" value="{{ address.neighborhood }}" required>
+                    </div>
+                     <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="city" class="form-label">Cidade</label>
+                            <input type="text" class="form-control" name="city" value="{{ address.city }}" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="state" class="form-label">Estado</label>
+                            <input type="text" class="form-control" name="state" value="{{ address.state }}" required maxlength="2">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="zip_code" class="form-label">CEP</label>
+                            <input type="text" class="form-control" name="zip_code" value="{{ address.zip_code }}" required pattern="\d{8}">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Salvar Alterações</button>
+                    <a href="{{ url_for('my_account') }}" class="btn btn-secondary w-100 mt-2">Cancelar</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

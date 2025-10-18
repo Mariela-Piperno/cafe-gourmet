@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Clube de Assinatura{% endblock %}
+
+{% block content %}
+<div class="pricing-header p-3 pb-md-4 mx-auto text-center">
+    <h1 class="display-4 fw-normal">Nosso Clube de Assinatura</h1>
+    <p class="fs-5 text-muted">Receba os melhores cafés gourmet no conforto da sua casa, todos os meses. Cancele quando quiser.</p>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
+    {% for plan in plans %}
+    <div class="col">
+        <div class="card mb-4 rounded-3 shadow-sm">
+            <div class="card-header py-3">
+                <h4 class="my-0 fw-normal">{{ plan.name }}</h4>
+            </div>
+            <div class="card-body">
+                <h1 class="card-title pricing-card-title">R${{ plan.price_str }}<small class="text-muted fw-light">/mês</small></h1>
+                <p>{{ plan.description }}</p>
+                <ul class="list-unstyled mt-3 mb-4">
+                    {% for item in plan['items'] %}
+                    <li>{{ item }}</li>
+                    {% endfor %}
+                </ul>
+                
+                {% if session.loggedin %}
+                    <a href="{{ url_for('subscribe', plan_name=plan.name) }}" class="w-100 btn btn-lg btn-primary">Assinar e Pagar</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="w-100 btn btn-lg btn-outline-primary">Faça login para assinar</a>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

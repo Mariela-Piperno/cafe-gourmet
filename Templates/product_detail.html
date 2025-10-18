@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row gx-5 align-items-center">
+        <div class="col-md-6">
+            <img src="{{ product.image_url if product.image_url else 'https://placehold.co/600x600/6f4e37/FFFFFF?text=Café' }}" 
+                 class="img-fluid rounded-3 shadow-lg" 
+                 alt="{{ product.name }}">
+        </div>
+
+        <div class="col-md-6">
+            <h1 class="display-5 fw-bold">{{ product.name }}</h1>
+            <p class="lead text-muted">
+                Estoque: {{ product.stock_quantity }} unidades
+            </p>
+            
+            <p class="fs-4 my-3" style="color: #a35f37; font-weight: bold;">R$ {{ "%.2f"|format(product.price|float) }}</p>
+            
+            <p>{{ product.description }}</p>
+
+            <hr class="my-4">
+
+            <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="post" class="d-flex align-items-center">
+                <div class="me-3">
+                    <label for="quantity" class="form-label">Quantidade</label>
+                    <input type="number" name="quantity" id="quantity" class="form-control" value="1" min="1" max="{{ product.stock_quantity }}" style="width: 80px;">
+                </div>
+                <div class="flex-grow-1">
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <i class="bi bi-cart-plus-fill me-2"></i>Adicionar ao Carrinho
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3 class="pb-2 border-bottom">Avaliações dos Clientes</h3>
+            {% if reviews %}
+                {% for review in reviews %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title" style="font-family: 'Open Sans', sans-serif; color: #333;">{{ review.user_name }}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">
+                            Nota: <span style="color: #a35f37;">{{ '★' * review.rating }}{{ '☆' * (5-review.rating) }}</span>
+                            <small class="ms-2">- {{ review.created_at.strftime('%d/%m/%Y') }}</small>
+                        </h6>
+                        <p class="card-text">{{ review.comment }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-light text-center border">
+                    Este produto ainda não possui avaliações. Seja o primeiro a avaliar após a sua compra!
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

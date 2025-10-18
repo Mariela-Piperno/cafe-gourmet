@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Minha Conta{% endblock %}
+
+{% block content %}
+<h2 class="pb-2 border-bottom">Minha Conta</h2>
+<p>Olá, {{ session.name }}! Aqui você pode gerenciar seus endereços e sua assinatura.</p>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h4>Minha Assinatura</h4>
+    </div>
+    <div class="card-body">
+        {% if subscription %}
+            <p><strong>Plano Ativo:</strong> {{ subscription.plan_name }}</p>
+            <p class="text-muted">Sua assinatura será renovada automaticamente. Você pode cancelá-la a qualquer momento.</p>
+            <form action="{{ url_for('cancel_subscription') }}" method="post" onsubmit="return confirm('Tem certeza que deseja cancelar sua assinatura?');">
+                <button type="submit" class="btn btn-danger">Cancelar Assinatura</button>
+            </form>
+        {% else %}
+            <p>Você ainda não é membro do nosso clube.</p>
+            <a href="{{ url_for('subscriptions') }}" class="btn btn-primary">Conheça nossos planos</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-5">
+    <div class="col-md-6">
+        <h4>Meus Endereços</h4>
+        {% if addresses %}
+            <ul class="list-group">
+                {% for address in addresses %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ address.street }}, {{ address.number }}</strong><br>
+                        <small>{{ address.neighborhood }}, {{ address.city }} - {{ address.state }}</small><br>
+                        <small>CEP: {{ address.zip_code }}</small>
+                    </div>
+                    <div class="d-flex">
+                        <a href="{{ url_for('edit_address', address_id=address.id) }}" class="btn btn-warning btn-sm me-2">Editar</a>
+                        <form action="{{ url_for('delete_address') }}" method="post" onsubmit="return confirm('Tem certeza que deseja excluir este endereço?');">
+                            <input type="hidden" name="address_id" value="{{ address.id }}">
+                            <button type="submit" class="btn btn-danger btn-sm">Excluir</button>
+                        </form>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Você ainda não tem nenhum endereço ativo. Cadastre um novo!</p>
+        {% endif %}
+    </div>
+
+    <div class="col-md-6">
+        <h4>Adicionar Novo Endereço</h4>
+        <div class="card">
+            <div class="card-body">
+                <form action="{{ url_for('my_account') }}" method="post">
+                    <div class="mb-3">
+                        <label for="street" class="form-label">Rua / Avenida</label>
+                        <input type="text" class="form-control" name="street" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="number" class="form-label">Número</label>
+                            <input type="text" class="form-control" name="number" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="complement" class="form-label">Complemento</label>
+                            <input type="text" class="form-control" name="complement">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="neighborhood" class="form-label">Bairro</label>
+                        <input type="text" class="form-control" name="neighborhood" required>
+                    </div>
+                     <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="city" class="form-label">Cidade</label>
+                            <input type="text" class="form-control" name="city" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="state" class="form-label">Estado</label>
+                            <input type="text" class="form-control" name="state" required maxlength="2">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="zip_code" class="form-label">CEP</label>
+                            <input type="text" class="form-control" name="zip_code" required pattern="\d{8}">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Salvar Endereço</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

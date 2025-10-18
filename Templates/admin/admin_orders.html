@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Gerenciar Pedidos{% endblock %}
+
+{% block content %}
+<h2 class="pb-2 border-bottom">Painel do Administrador - Gerenciar Pedidos</h2>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th># Pedido</th>
+                <th>Cliente</th>
+                <th>Data</th>
+                <th>Valor Total</th>
+                <th>Status Atual</th>
+                <th>Mudar Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order.id }}</td>
+                <td>{{ order.customer_name }}</td>
+                <td>{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td>R$ {{ "%.2f"|format(order.total_amount) }}</td>
+                <td>
+                    <span class="badge 
+                        {% if order.status|lower == 'entregue' %} bg-success
+                        {% elif order.status|lower == 'em_rota' %} bg-info
+                        {% elif order.status|lower == 'em_preparacao' %} bg-warning
+                        {% elif order.status|lower == 'aguardando_pagamento' %} bg-secondary
+                        {% else %} bg-dark {% endif %}">
+                        {{ order.status.replace('_', ' ')|capitalize }}
+                    </span>
+                </td>
+                <td>
+                    <form action="{{ url_for('update_order_status', order_id=order.id) }}" method="post" class="d-flex">
+                        <select name="status" class="form-select form-select-sm me-2">
+                            <option value="em_preparacao" {% if order.status == 'em_preparacao' %}selected{% endif %}>Em preparação</option>
+                            <option value="em_rota" {% if order.status == 'em_rota' %}selected{% endif %}>Em rota</option>
+                            <option value="entregue" {% if order.status == 'entregue' %}selected{% endif %}>Entregue</option>
+                            <option value="cancelado" {% if order.status == 'cancelado' %}selected{% endif %}>Cancelado</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary btn-sm">Salvar</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="text-center">Nenhum pedido encontrado.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
