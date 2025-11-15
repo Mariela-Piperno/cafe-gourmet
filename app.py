@@ -5,7 +5,7 @@ from markupsafe import Markup
 from functools import wraps
 import mysql.connector
 from werkzeug.security import generate_password_hash, check_password_hash
-from itsdangerous import URLSafeTimedSerializer, SignatureExpired  # Mantemos isso para gerar tokens seguros
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 
 # Configura a conexão com o banco de dados
 db_config = {
@@ -18,7 +18,7 @@ db_config = {
 app = Flask(__name__)
 app.secret_key = 'sua_chave_secreta_aqui'
 
-# --- CONFIGURAÇÃO DE TOKEN (substitui a de e-mail) ---
+# Configuração de Token
 s = URLSafeTimedSerializer(app.secret_key)
 
 # Decorator para verificar se o usuário é admin
@@ -251,6 +251,7 @@ def add_to_cart(product_id):
     except Exception as e:
         flash(f'Ocorreu um erro: {e}', 'danger')
     return redirect(url_for('index'))
+
 @app.route('/cart')
 def cart():
     if 'loggedin' not in session:
@@ -259,6 +260,7 @@ def cart():
     cart_items = session.get('cart', {})
     total_price = sum(item['price'] * item['quantity'] for item in cart_items.values())
     return render_template('cart.html', cart_items=cart_items, total_price=total_price)
+
 @app.route('/remove_from_cart/<product_id>')
 def remove_from_cart(product_id):
     if 'loggedin' not in session: return redirect(url_for('login'))
@@ -269,6 +271,7 @@ def remove_from_cart(product_id):
         session.modified = True
         flash('Item removido do carrinho.', 'success')
     return redirect(url_for('cart'))
+
 @app.route('/checkout')
 def checkout():
     if 'loggedin' not in session:
@@ -287,6 +290,7 @@ def checkout():
     cursor.close()
     conn.close()
     return render_template('checkout.html', cart_items=cart, total_price=total_price, addresses=addresses)
+
 @app.route('/place_order', methods=['POST'])
 def place_order():
     if 'loggedin' not in session or not session.get('cart'): return redirect(url_for('index'))
@@ -328,6 +332,7 @@ def place_order():
     except Exception as e:
         flash(f"Ocorreu um erro ao processar seu pedido: {e}", 'danger')
         return redirect(url_for('checkout'))
+
 @app.route('/order_confirmation/<int:order_id>')
 def order_confirmation(order_id):
     if 'loggedin' not in session: return redirect(url_for('login'))
@@ -364,6 +369,7 @@ def my_account():
     cursor.close()
     conn.close()
     return render_template('my_account.html', addresses=addresses, subscription=subscription)
+
 @app.route('/my_orders')
 def my_orders():
     if 'loggedin' not in session:
@@ -373,20 +379,35 @@ def my_orders():
     try:
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT o.id, o.total_amount, o.status, o.created_at, p.id as product_id, p.name as product_name, oi.quantity, oi.unit_price FROM orders AS o JOIN order_items AS oi ON o.id = oi.order_id JOIN products AS p ON oi.product_id = p.id WHERE o.user_id = %s ORDER BY o.created_at DESC", (user_id,))
+        cursor.execute("""
+            SELECT 
+                o.id, o.total_amount, o.status, o.created_at,
+                p.id as product_id, p.name as product_name,
+                oi.quantity, oi.unit_price,
+                r.id as review_id
+            FROM orders AS o
+            JOIN order_items AS oi ON o.id = oi.order_id
+            JOIN products AS p ON oi.product_id = p.id
+            LEFT JOIN reviews AS r ON r.order_id = o.id AND r.product_id = p.id AND r.user_id = o.user_id
+            WHERE o.user_id = %s
+            ORDER BY o.created_at DESC, p.name ASC
+        """, (user_id,))
         orders_raw = cursor.fetchall()
         cursor.close()
         conn.close()
+        
         orders = {}
         for item in orders_raw:
             order_id = item['id']
             if order_id not in orders:
                 orders[order_id] = {'total_amount': item['total_amount'], 'status': item['status'], 'created_at': item['created_at'], 'items': []}
             orders[order_id]['items'].append(item)
+        
         return render_template('my_orders.html', orders=orders)
     except Exception as e:
         flash(f'Ocorreu um erro ao buscar seus pedidos: {e}', 'danger')
         return redirect(url_for('index'))
+
 @app.route('/submit_review', methods=['POST'])
 def submit_review():
     if 'loggedin' not in session:
@@ -407,8 +428,12 @@ def submit_review():
         conn.close()
         flash('Sua avaliação foi enviada com sucesso. Obrigado!', 'success')
     except mysql.connector.Error as err:
-        flash(f'Ocorreu um erro ao salvar sua avaliação: {err}', 'danger')
+        if err.errno == 1062:
+            flash('Você já avaliou este produto para este pedido.', 'warning')
+        else:
+            flash(f'Ocorreu um erro ao salvar sua avaliação: {err}', 'danger')
     return redirect(url_for('my_orders'))
+
 @app.route('/cancel_subscription', methods=['POST'])
 def cancel_subscription():
     if 'loggedin' not in session:
@@ -522,25 +547,37 @@ def admin_products():
     cursor.close()
     conn.close()
     return render_template('admin/admin_products.html', products=products)
+
 @app.route('/admin/products/add', methods=['GET', 'POST'])
 @admin_required
 def add_product():
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor(dictionary=True)
     if request.method == 'POST':
         name = request.form['name']
         description = request.form['description']
         price = request.form['price']
         stock_quantity = request.form['stock_quantity']
         image_url = request.form.get('image_url', '')
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO products (name, description, price, stock_quantity, image_url) VALUES (%s, %s, %s, %s, %s)",
-                       (name, description, price, stock_quantity, image_url))
+        category_id = request.form.get('category_id')
+        if not category_id: category_id = None
+        
+        insert_cursor = conn.cursor()
+        insert_cursor.execute("INSERT INTO products (name, description, price, stock_quantity, image_url, category_id) VALUES (%s, %s, %s, %s, %s, %s)",
+                       (name, description, price, stock_quantity, image_url, category_id))
         conn.commit()
+        insert_cursor.close()
         cursor.close()
         conn.close()
         flash('Produto adicionado com sucesso!', 'success')
         return redirect(url_for('admin_products'))
-    return render_template('admin/admin_product_form.html', title="Adicionar Novo Produto")
+    
+    cursor.execute("SELECT * FROM categories ORDER BY name")
+    categories = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('admin/admin_product_form.html', title="Adicionar Novo Produto", categories=categories)
+
 @app.route('/admin/products/edit/<int:product_id>', methods=['GET', 'POST'])
 @admin_required
 def edit_product(product_id):
@@ -552,18 +589,30 @@ def edit_product(product_id):
         price = request.form['price']
         stock_quantity = request.form['stock_quantity']
         image_url = request.form.get('image_url', '')
-        cursor.execute("UPDATE products SET name=%s, description=%s, price=%s, stock_quantity=%s, image_url=%s WHERE id=%s",
-                       (name, description, price, stock_quantity, image_url, product_id))
+        category_id = request.form.get('category_id')
+        if not category_id: category_id = None
+        
+        update_cursor = conn.cursor()
+        update_cursor.execute("UPDATE products SET name=%s, description=%s, price=%s, stock_quantity=%s, image_url=%s, category_id=%s WHERE id=%s",
+                       (name, description, price, stock_quantity, image_url, category_id, product_id))
         conn.commit()
+        update_cursor.close()
         cursor.close()
         conn.close()
         flash('Produto atualizado com sucesso!', 'success')
         return redirect(url_for('admin_products'))
+    
     cursor.execute("SELECT * FROM products WHERE id = %s", (product_id,))
     product = cursor.fetchone()
+    cursor.execute("SELECT * FROM categories ORDER BY name")
+    categories = cursor.fetchall()
     cursor.close()
     conn.close()
-    return render_template('admin/admin_product_form.html', title="Editar Produto", product=product)
+    if not product:
+        flash('Produto não encontrado.', 'danger')
+        return redirect(url_for('admin_products'))
+    return render_template('admin/admin_product_form.html', title="Editar Produto", product=product, categories=categories)
+
 @app.route('/admin/products/delete/<int:product_id>', methods=['POST'])
 @admin_required
 def delete_product(product_id):
